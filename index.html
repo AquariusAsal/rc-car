@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>RC-Car Cockpit</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="status-container">
+        <div id="led" class="led"></div>
+        <span id="status-text">Getrennt</span>
+    </div>
+
+    <button id="btn-connect" onclick="connectBluetooth()">🔗 Bluetooth Verbinden</button>
+
+    <div class="d-pad">
+        <div class="hidden"></div>
+        <button class="btn" id="btn-up">▲</button>
+        <div class="hidden"></div>
+
+        <button class="btn" id="btn-left">◀</button>
+        <button class="btn btn-stop" id="btn-stop">■</button>
+        <button class="btn" id="btn-right">▶</button>
+
+        <div class="hidden"></div>
+        <button class="btn" id="btn-down">▼</button>
+        <div class="hidden"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
