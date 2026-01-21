@@ -2,87 +2,249 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RC-Car Steuerung</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>RC-Car Cockpit</title>
     <style>
-        body { font-family: sans-serif; text-align: center; background-color: #222; color: white; }
-        h1 { margin-top: 20px; }
-        .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; max-width: 300px; margin: 20px auto; }
-        button { padding: 20px; font-size: 24px; border: none; border-radius: 10px; cursor: pointer; background-color: #444; color: white; touch-action: manipulation; }
-        button:active { background-color: #007bff; }
-        #btn-connect { background-color: #28a745; width: 80%; padding: 15px; margin-bottom: 20px; font-size: 18px; }
-        #status { margin-bottom: 20px; color: #aaa; }
+        /* --- DESIGN (CSS) --- */
+        body {
+            background-color: #1a1a1a;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            user-select: none; /* Verhindert Markieren von Text */
+            touch-action: manipulation; /* Optimiert für Touchscreens */
+            overflow: hidden;
+        }
+
+        /* Status Anzeige mit LED */
+        .status-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            padding: 10px 20px;
+            background: #2a2a2a;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .led {
+            width: 12px; height: 12px;
+            background-color: #ff3b30; /* Rot */
+            border-radius: 50%;
+            box-shadow: 0 0 8px #ff3b30;
+            transition: all 0.3s;
+        }
+        .led.on {
+            background-color: #4cd964; /* Grün */
+            box-shadow: 0 0 10px #4cd964;
+        }
+
+        /* Verbindungs-Button */
+        #btn-connect {
+            background: linear-gradient(145deg, #007aff, #005bb5);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,122,255,0.4);
+            transition: transform 0.1s;
+            margin-bottom: 20px;
+        }
+        #btn-connect:active { transform: scale(0.95); }
+
+        /* --- STEUERKREUZ (D-PAD) --- */
+        .d-pad {
+            display: grid;
+            grid-template-columns: 80px 80px 80px;
+            grid-template-rows: 80px 80px 80px;
+            gap: 10px;
+            background: #252525;
+            padding: 15px;
+            border-radius: 50%;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .btn {
+            width: 80px; height: 80px;
+            border: none;
+            border-radius: 15px;
+            background: #333;
+            color: #aaa;
+            font-size: 30px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #111;
+            transition: all 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Aktiver Zustand (Gedrückt) */
+        .btn:active, .btn.active {
+            transform: translateY(5px);
+            box-shadow: 0 0 0 #111;
+            background: #007aff;
+            color: white;
+        }
+
+        /* Stop Button (Rot) */
+        .btn-stop {
+            background: #d63031;
+            color: white;
+            border-radius: 50%;
+            box-shadow: 0 5px 0 #911516;
+            font-size: 24px;
+        }
+        .btn-stop:active {
+            background: #ff4d4d;
+            box-shadow: 0 0 0 #911516;
+        }
+
+        /* Versteckte Platzhalter im Grid */
+        .hidden { visibility: hidden; pointer-events: none; }
     </style>
 </head>
 <body>
 
-    <h1>RC-Car Control</h1>
-    <button id="btn-connect" onclick="connectBluetooth()">🔗 Mit Auto verbinden</button>
-    <p id="status">Nicht verbunden</p>
+    <div class="status-container">
+        <div id="led" class="led"></div>
+        <span id="status-text">Getrennt</span>
+    </div>
 
-    <div class="controls">
-        <div></div>
-        <button onmousedown="sendCommand('F')" onmouseup="sendCommand('S')" ontouchstart="sendCommand('F')" ontouchend="sendCommand('S')">▲</button>
-        <div></div>
-        
-        <button onmousedown="sendCommand('L')" onmouseup="sendCommand('S')" ontouchstart="sendCommand('L')" ontouchend="sendCommand('S')">◀</button>
-        <button onmousedown="sendCommand('S')" ontouchstart="sendCommand('S')">■</button>
-        <button onmousedown="sendCommand('R')" onmouseup="sendCommand('S')" ontouchstart="sendCommand('R')" ontouchend="sendCommand('S')">▶</button>
-        
-        <div></div>
-        <button onmousedown="sendCommand('B')" onmouseup="sendCommand('S')" ontouchstart="sendCommand('B')" ontouchend="sendCommand('S')">▼</button>
-        <div></div>
+    <button id="btn-connect" onclick="connectBluetooth()">🔗 Bluetooth Suche starten</button>
+
+    <div class="d-pad">
+        <div class="hidden"></div>
+        <button class="btn" id="btn-up">▲</button>
+        <div class="hidden"></div>
+
+        <button class="btn" id="btn-left">◀</button>
+        <button class="btn btn-stop" id="btn-stop">■</button>
+        <button class="btn" id="btn-right">▶</button>
+
+        <div class="hidden"></div>
+        <button class="btn" id="btn-down">▼</button>
+        <div class="hidden"></div>
     </div>
 
     <script>
+        // --- LOGIK (JavaScript) ---
         let bluetoothDevice;
         let characteristic;
 
-        // Standard UUIDs für HM-10 Module (ggf. im Datenblatt prüfen)
+        // HM-10 Standard UUIDs
         const serviceUUID = 0xFFE0;
         const charUUID = 0xFFE1;
 
+        // Button Referenzen
+        const buttons = {
+            'F': document.getElementById('btn-up'),
+            'B': document.getElementById('btn-down'),
+            'L': document.getElementById('btn-left'),
+            'R': document.getElementById('btn-right'),
+            'S': document.getElementById('btn-stop')
+        };
+
+        // --- BLUETOOTH VERBINDUNG ---
         async function connectBluetooth() {
             try {
-                document.getElementById('status').innerText = "Suche Gerät...";
+                updateStatus("Suche...", false);
                 
-                // 1. Gerät anfordern
+                // WICHTIG: acceptAllDevices erzwingt das Pop-up bei Android!
                 bluetoothDevice = await navigator.bluetooth.requestDevice({
-                    filters: [{ services: [serviceUUID] }]
+                    acceptAllDevices: true,
+                    optionalServices: [serviceUUID] 
                 });
 
-                // 2. Mit Server verbinden
+                bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
+
                 const server = await bluetoothDevice.gatt.connect();
-                
-                // 3. Service holen
                 const service = await server.getPrimaryService(serviceUUID);
-                
-                // 4. Characteristic holen (hier schreiben wir die Daten rein)
                 characteristic = await service.getCharacteristic(charUUID);
 
-                document.getElementById('status').innerText = "✅ Verbunden mit " + bluetoothDevice.name;
+                updateStatus("Verbunden!", true);
                 document.getElementById('btn-connect').style.display = 'none';
 
             } catch (error) {
-                console.error(error);
-                document.getElementById('status').innerText = "Fehler: " + error;
+                console.error("Fehler:", error);
+                // Spezifischer Hinweis falls Service nicht gefunden wird
+                if(error.toString().includes("Service not found")) {
+                    alert("Gerät verbunden, aber Service FFE0 fehlt! Ist es ein HM-10?");
+                }
+                updateStatus("Fehler (siehe Konsole)", false);
             }
         }
 
-        async function sendCommand(cmd) {
+        function onDisconnected() {
+            updateStatus("Verbindung verloren", false);
+            document.getElementById('btn-connect').style.display = 'block';
+        }
+
+        function updateStatus(text, connected) {
+            document.getElementById('status-text').innerText = text;
+            const led = document.getElementById('led');
+            if (connected) led.classList.add('on');
+            else led.classList.remove('on');
+        }
+
+        // --- SENDEN ---
+        async function send(cmd) {
+            // Vibration Feedback (15ms)
+            if (navigator.vibrate) navigator.vibrate(15);
+
             if (!characteristic) return;
-            
-            // Konvertiere String zu Uint8Array für die Übertragung
-            const encoder = new TextEncoder();
-            const data = encoder.encode(cmd);
 
             try {
-                await characteristic.writeValue(data);
-                console.log("Gesendet: " + cmd);
-            } catch (error) {
-                console.log("Sende-Fehler: " + error);
+                const encoder = new TextEncoder();
+                await characteristic.writeValue(encoder.encode(cmd));
+            } catch (err) {
+                console.log("Sende-Fehler: " + err);
+                onDisconnected();
             }
         }
+
+        // --- TOUCH & MAUS HANDLING ---
+        function bindButton(key, element) {
+            const start = (e) => {
+                if (e.cancelable) e.preventDefault(); // Kein Scrollen/Zoom
+                element.classList.add('active');
+                send(key);
+            };
+            const end = (e) => {
+                if (e.cancelable) e.preventDefault();
+                element.classList.remove('active');
+                send('S'); // Beim Loslassen immer STOP
+            };
+
+            // Events für Maus (PC) und Touch (Handy)
+            element.addEventListener('mousedown', start);
+            element.addEventListener('mouseup', end);
+            element.addEventListener('touchstart', start, { passive: false });
+            element.addEventListener('touchend', end, { passive: false });
+        }
+
+        // Tasten verknüpfen
+        bindButton('F', buttons['F']);
+        bindButton('B', buttons['B']);
+        bindButton('L', buttons['L']);
+        bindButton('R', buttons['R']);
+        
+        // Stop Button separat (Klick reicht)
+        buttons['S'].addEventListener('click', (e) => {
+            e.preventDefault();
+            send('S');
+        });
+
     </script>
 </body>
 </html>
