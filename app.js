@@ -2,12 +2,11 @@
 let bluetoothDevice;
 let characteristic;
 
-// Standard UUIDs für HM-10 Module. 
-// Falls es nicht verbindet, prüfen Sie, ob Ihr Modul andere UUIDs hat.
+// UUIDs für HM-10 (Standard). 
+// Falls das Auto nicht reagiert, müssen diese evtl. geändert werden.
 const serviceUUID = 0xFFE0; 
 const charUUID = 0xFFE1;    
 
-// Button Elemente referenzieren
 const buttons = {
     'F': document.getElementById('btn-up'),
     'B': document.getElementById('btn-down'),
@@ -16,31 +15,38 @@ const buttons = {
     'S': document.getElementById('btn-stop')
 };
 
-// --- BLUETOOTH FUNKTIONEN ---
+// --- BLUETOOTH ---
 
 async function connectBluetooth() {
     try {
         updateStatus("Suche...", false);
         
-        // Browser Scan Dialog öffnen
+        // FIX: Wir akzeptieren JETZT ALLE Geräte.
+        // Das erzwingt das Pop-up Fenster auf Android.
         bluetoothDevice = await navigator.bluetooth.requestDevice({
-            filters: [{ services: [serviceUUID] }]
+            acceptAllDevices: true,
+            optionalServices: [serviceUUID] // Wichtig: Damit wir später Zugriff haben
         });
 
-        // Event-Listener: Wenn Verbindung abbricht
         bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
 
-        // Verbindung aufbauen
         const server = await bluetoothDevice.gatt.connect();
+        
+        // Wir versuchen den Service zu holen
         const service = await server.getPrimaryService(serviceUUID);
         characteristic = await service.getCharacteristic(charUUID);
 
-        updateStatus("Verbunden", true);
-        document.getElementById('btn-connect').style.display = 'none'; // Button ausblenden
+        updateStatus("Verbunden!", true);
+        document.getElementById('btn-connect').style.display = 'none';
 
     } catch (error) {
-        console.error("Verbindungsfehler:", error);
-        updateStatus("Fehler / Abbruch", false);
+        console.error("Fehler:", error);
+        // Falls der Service nicht gefunden wird (falsches Modul?)
+        if(error.toString().includes("Service not found")) {
+             alert("Verbunden, aber Service nicht gefunden! Ist es ein HM-10?");
+        } else {
+             updateStatus("Fehler: " + error, false);
+        }
     }
 }
 
@@ -52,69 +58,50 @@ function onDisconnected() {
 function updateStatus(text, connected) {
     document.getElementById('status-text').innerText = text;
     const led = document.getElementById('led');
-    if (connected) {
-        led.classList.add('on');
-    } else {
-        led.classList.remove('on');
-    }
+    if (connected) led.classList.add('on');
+    else led.classList.remove('on');
 }
 
 // --- SENDEN ---
-
 async function send(cmd) {
-    // Kurze Vibration am Handy (Feedback), falls unterstützt
-    if (navigator.vibrate) navigator.vibrate(15); 
+    if (navigator.vibrate) navigator.vibrate(15);
     
-    if (!characteristic) {
-        console.log("Nicht verbunden, kann nicht senden: " + cmd);
-        return;
-    }
+    if (!characteristic) return;
 
     try {
         const encoder = new TextEncoder();
         await characteristic.writeValue(encoder.encode(cmd));
-        // console.log("Gesendet:", cmd); // Zum Debuggen einkommentieren
     } catch (err) { 
         console.log("Sende-Fehler", err); 
-        onDisconnected(); // Vermutlich Verbindung weg
+        // Falls Fehler beim Senden -> Verbindung wohl weg
+        onDisconnected();
     }
 }
 
-// --- TOUCH & MAUS EVENT HANDLER ---
-
-// Hilfsfunktion: Verbindet Touch/Maus-Ereignisse mit Sende-Logik
+// --- TOUCH & MAUS HANDLING ---
 function bindButton(key, element) {
-    
-    // Drücken (Start)
     const start = (e) => {
-        if (e.cancelable) e.preventDefault(); // Verhindert Scrollen/Zoomen
-        element.classList.add('active');      // CSS Klasse für Optik
-        send(key);                            // Befehl senden
+        if (e.cancelable) e.preventDefault();
+        element.classList.add('active');
+        send(key);
     };
-    
-    // Loslassen (Ende)
     const end = (e) => {
         if (e.cancelable) e.preventDefault();
         element.classList.remove('active');
-        send('S');                            // Immer STOP senden beim Loslassen
+        send('S');
     };
 
-    // Maus Events (für PC Tests)
     element.addEventListener('mousedown', start);
     element.addEventListener('mouseup', end);
-
-    // Touch Events (für Smartphone)
     element.addEventListener('touchstart', start, { passive: false });
     element.addEventListener('touchend', end, { passive: false });
 }
 
-// Events an die Buttons binden
-bindButton('F', buttons['F']); // Vorwärts
-bindButton('B', buttons['B']); // Rückwärts
-bindButton('L', buttons['L']); // Links
-bindButton('R', buttons['R']); // Rechts
+bindButton('F', buttons['F']);
+bindButton('B', buttons['B']);
+bindButton('L', buttons['L']);
+bindButton('R', buttons['R']);
 
-// Stop Button (Klick reicht hier)
 buttons['S'].addEventListener('click', (e) => {
     e.preventDefault();
     send('S');
