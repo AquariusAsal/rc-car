@@ -10,41 +10,38 @@ const els = {
     layoutWheel: document.getElementById('layout-wheel'),
     layoutAuto: document.getElementById('layout-auto'),
     modal: document.getElementById('settings-modal'),
-    wheel: document.getElementById('steering-wheel'),
+    wheelImg: document.getElementById('steering-wheel'), // Das Bild
     speed: document.getElementById('speed-display'),
     status: document.getElementById('connection-status'),
-    gauge: document.querySelector('.gauge')
+    gauge: document.querySelector('.gauge'),
+    gpStatus: document.getElementById('gamepad-status')
 };
 
-// Aktueller Status
-let currentSpeed = 0;
 let lastCmd = 'S';
+let currentMode = 'ps4'; // Standard Modus
 
-/* --- BLUETOOTH (Wie gehabt) --- */
+/* --- BLUETOOTH --- */
 async function connectBluetooth() {
     try {
         els.status.innerText = "SUCHE...";
         bluetoothDevice = await navigator.bluetooth.requestDevice({
-            acceptAllDevices: true,
-            optionalServices: [serviceUUID]
+            acceptAllDevices: true, optionalServices: [serviceUUID]
         });
         bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
         const server = await bluetoothDevice.gatt.connect();
         const service = await server.getPrimaryService(serviceUUID);
         characteristic = await service.getCharacteristic(charUUID);
-        
-        // Empfang starten
         await characteristic.startNotifications();
         characteristic.addEventListener('characteristicvaluechanged', handleNotifications);
 
-        els.status.innerText = "ONLINE";
+        els.status.innerText = "CAR: ONLINE";
         els.status.classList.add('connected');
         document.getElementById('btn-connect').style.display = 'none';
     } catch (err) { console.error(err); els.status.innerText = "FEHLER"; }
 }
 
 function onDisconnected() {
-    els.status.innerText = "OFFLINE";
+    els.status.innerText = "CAR: OFFLINE";
     els.status.classList.remove('connected');
     document.getElementById('btn-connect').style.display = 'block';
 }
@@ -57,159 +54,114 @@ function handleNotifications(event) {
 
 function updateTacho(val) {
     els.speed.innerText = val.toFixed(1);
-    let pct = (val / 2.0) * 100; // Annahme: Max 2 m/s
+    let pct = (val / 2.0) * 100;
     if(pct>100) pct=100;
     els.gauge.style.background = `conic-gradient(#00e5ff ${pct}%, #333 ${pct}%)`;
 }
 
 async function send(cmd) {
-    if(cmd === lastCmd) return; // Nicht spammen
+    if(cmd === lastCmd) return; // Spam verhindern
     lastCmd = cmd;
-    
     if(navigator.vibrate && cmd !== 'S') navigator.vibrate(10);
     if(!characteristic) return;
-    try {
-        await characteristic.writeValue(new TextEncoder().encode(cmd));
-    } catch(e) { console.log(e); }
+    try { await characteristic.writeValue(new TextEncoder().encode(cmd)); } catch(e) {}
 }
 
 /* --- EINSTELLUNGEN --- */
-function toggleSettings() {
-    els.modal.classList.toggle('hidden');
-}
+function toggleSettings() { els.modal.classList.toggle('hidden'); }
 
 function changeLayout() {
-    const mode = document.getElementById('mode-selector').value;
-    // Alles ausblenden
+    currentMode = document.getElementById('mode-selector').value;
     els.layoutPS4.classList.add('hidden');
     els.layoutWheel.classList.add('hidden');
     els.layoutAuto.classList.add('hidden');
 
-    // Gewähltes einblenden
-    if(mode === 'ps4') els.layoutPS4.classList.remove('hidden');
-    if(mode === 'wheel') els.layoutWheel.classList.remove('hidden');
-    if(mode === 'auto') els.layoutAuto.classList.remove('hidden');
-    
+    if(currentMode === 'ps4') els.layoutPS4.classList.remove('hidden');
+    if(currentMode === 'wheel') els.layoutWheel.classList.remove('hidden');
+    if(currentMode === 'auto') els.layoutAuto.classList.remove('hidden');
     toggleSettings();
 }
 
+/* --- NEU: GAMEPAD API LOOP (Für echten Controller) --- */
+let gamepadIndex = null;
 
-/* --- LOGIK: VIRTUAL JOYSTICK (PS4) --- */
-class VirtualJoystick {
-    constructor(elementId, type) {
-        this.knob = document.getElementById(elementId);
-        this.base = this.knob.parentElement;
-        this.type = type; // 'drive' oder 'steer'
-        this.active = false;
-        this.startX = 0; this.startY = 0;
-        
-        // Touch Events binden
-        this.base.addEventListener('touchstart', (e) => this.start(e), {passive: false});
-        this.base.addEventListener('touchmove', (e) => this.move(e), {passive: false});
-        this.base.addEventListener('touchend', () => this.end());
-    }
-
-    start(e) {
-        e.preventDefault();
-        this.active = true;
-        this.startX = e.touches[0].clientX;
-        this.startY = e.touches[0].clientY;
-    }
-
-    move(e) {
-        if(!this.active) return;
-        e.preventDefault();
-        
-        const deltaX = e.touches[0].clientX - this.startX;
-        const deltaY = e.touches[0].clientY - this.startY;
-        
-        // Begrenzung des Knobs (visuell)
-        const limit = 30; 
-        const dist = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
-        let x = deltaX; let y = deltaY;
-        
-        if(dist > limit) {
-            x = (deltaX / dist) * limit;
-            y = (deltaY / dist) * limit;
-        }
-
-        this.knob.style.transform = `translate(${x}px, ${y}px)`;
-
-        // Logik für Befehle (Threshold 15px)
-        if(this.type === 'drive') {
-            if(y < -15) send('F');
-            else if(y > 15) send('B');
-            else send('S');
-        } else if (this.type === 'steer') {
-            if(x < -15) send('L');
-            else if(x > 15) send('R');
-            else send('S'); // Wichtig: Geradeaus wenn losgelassen
-        }
-    }
-
-    end() {
-        this.active = false;
-        this.knob.style.transform = `translate(0px, 0px)`;
-        send('S');
-    }
-}
-
-// Joysticks initialisieren
-new VirtualJoystick('stick-left', 'drive');
-new VirtualJoystick('stick-right', 'steer');
-
-
-/* --- LOGIK: LENKRAD (RACING) --- */
-const wheel = els.wheel;
-let wheelActive = false;
-
-wheel.addEventListener('touchstart', (e) => {
-    e.preventDefault(); wheelActive = true;
-}, {passive:false});
-
-wheel.addEventListener('touchmove', (e) => {
-    if(!wheelActive) return;
-    e.preventDefault();
-    
-    const rect = wheel.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const touchX = e.touches[0].clientX;
-    const touchY = e.touches[0].clientY;
-
-    // Winkel berechnen
-    const angleRad = Math.atan2(touchY - centerY, touchX - centerX);
-    let angleDeg = angleRad * (180 / Math.PI);
-    
-    // Korrektur, damit oben 0 ist (atan2 ist rechts 0)
-    angleDeg += 90; 
-
-    // Visuell drehen (Begrenzt auf +/- 90 Grad)
-    if(angleDeg > 90) angleDeg = 90;
-    if(angleDeg < -90) angleDeg = -90;
-    
-    wheel.style.transform = `rotate(${angleDeg}deg)`;
-
-    // Befehle senden
-    if(angleDeg < -20) send('L');
-    else if(angleDeg > 20) send('R');
-    else send('S'); // Geradeaus in der Mitte
-}, {passive:false});
-
-wheel.addEventListener('touchend', () => {
-    wheelActive = false;
-    wheel.style.transform = `rotate(0deg)`; // Auto-Center
-    send('S');
+window.addEventListener("gamepadconnected", (e) => {
+    gamepadIndex = e.gamepad.index;
+    els.gpStatus.innerText = "Controller verbunden! (" + e.gamepad.id + ")";
+    els.gpStatus.classList.add('active');
+    els.gpStatus.classList.remove('pulsing');
+    gameLoop(); // Startet die Schleife
 });
 
-// Pedale
-const gas = document.getElementById('pedal-gas');
-const brake = document.getElementById('pedal-brake');
+window.addEventListener("gamepaddisconnected", () => {
+    gamepadIndex = null;
+    els.gpStatus.innerText = "Controller getrennt. Warte...";
+    els.gpStatus.classList.remove('active');
+    els.gpStatus.classList.add('pulsing');
+});
 
-const bindPedal = (elem, cmd) => {
-    elem.addEventListener('touchstart', (e) => { e.preventDefault(); elem.classList.add('active'); send(cmd); });
-    elem.addEventListener('touchend', (e) => { e.preventDefault(); elem.classList.remove('active'); send('S'); });
+function gameLoop() {
+    if (gamepadIndex === null || currentMode !== 'ps4') {
+        requestAnimationFrame(gameLoop); // Weiter laufen lassen, falls Modus gewechselt wird
+        return;
+    }
+
+    const gp = navigator.getGamepads()[gamepadIndex];
+    if (!gp) return;
+
+    let newCmd = 'S';
+    const deadzone = 0.3; // Ignoriere kleine Bewegungen
+
+    // Linker Stick Y-Achse (Index 1) für Vor/Zurück
+    let stickLeftY = gp.axes[1];
+    
+    // Rechter Stick X-Achse (Index 2) für Links/Rechts
+    let stickRightX = gp.axes[2];
+
+    // Priorität: Lenken überschreibt Fahren (einfache Logik)
+    if (stickRightX < -deadzone) {
+        newCmd = 'L';
+    } else if (stickRightX > deadzone) {
+        newCmd = 'R';
+    } else {
+        // Wenn nicht gelenkt wird, prüfe Fahren
+        if (stickLeftY < -deadzone) { // Negativ ist meist "oben" beim Controller
+            newCmd = 'F';
+        } else if (stickLeftY > deadzone) {
+            newCmd = 'B';
+        }
+    }
+
+    send(newCmd); // Sendet nur, wenn sich der Befehl ändert (siehe send Funktion)
+    requestAnimationFrame(gameLoop); // Nächster Frame
+}
+
+/* --- LOGIK: TOUCH LENKRAD (Racing Mode) --- */
+let wheelActive = false;
+els.wheelImg.addEventListener('touchstart', (e) => { e.preventDefault(); wheelActive = true; }, {passive:false});
+els.wheelImg.addEventListener('touchmove', (e) => {
+    if(!wheelActive) return; e.preventDefault();
+    const rect = els.wheelImg.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    // Winkel berechnen
+    const angleRad = Math.atan2(e.touches[0].clientY - centerY, e.touches[0].clientX - centerX);
+    let angleDeg = angleRad * (180 / Math.PI) + 90;
+    // Begrenzen auf +/- 90 Grad
+    if(angleDeg > 90) angleDeg = 90; if(angleDeg < -90) angleDeg = -90;
+    // Bild drehen
+    els.wheelImg.style.transform = `rotate(${angleDeg}deg)`;
+    // Befehle
+    if(angleDeg < -20) send('L'); else if(angleDeg > 20) send('R'); else send('S');
+}, {passive:false});
+els.wheelImg.addEventListener('touchend', () => {
+    wheelActive = false; els.wheelImg.style.transform = `rotate(0deg)`; send('S');
+});
+
+// Pedale (Touch)
+const bindPedal = (id, cmd) => {
+    const elem = document.getElementById(id);
+    elem.addEventListener('touchstart', (e)=>{e.preventDefault(); elem.classList.add('active'); send(cmd);});
+    elem.addEventListener('touchend', (e)=>{e.preventDefault(); elem.classList.remove('active'); send('S');});
 };
-
-bindPedal(gas, 'F');
-bindPedal(brake, 'B');
+bindPedal('pedal-gas', 'F'); bindPedal('pedal-brake', 'B');

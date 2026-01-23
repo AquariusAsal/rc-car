@@ -10,10 +10,10 @@
 
     <header>
         <div class="top-bar">
-            <div id="connection-status" class="status-indicator">OFF</div>
+            <div id="connection-status" class="status-indicator">CAR: OFFLINE</div>
             <div class="header-buttons">
-                <button id="btn-connect" onclick="connectBluetooth()">🔗 CONNECT</button>
-                <button id="btn-settings" onclick="toggleSettings()">⚙️</button>
+                <button id="btn-connect" onclick="connectBluetooth()">🔗 CAR VERBINDEN</button>
+                <button id="btn-settings" onclick="toggleSettings()">⚙️ MODUS</button>
             </div>
         </div>
     </header>
@@ -31,22 +31,16 @@
     </div>
 
     <div id="layout-ps4" class="control-layout">
-        <div class="controller-body">
-            <div class="joystick-zone" id="stick-left-zone">
-                <div class="joystick-base">
-                    <div class="joystick-knob" id="stick-left"></div>
-                </div>
-                <span class="label">DRIVE</span>
-            </div>
-
-            <div class="controller-center">
-                <div class="ps-btn" onclick="send('S')">PS</div> </div>
-
-            <div class="joystick-zone" id="stick-right-zone">
-                <div class="joystick-base">
-                    <div class="joystick-knob" id="stick-right"></div>
-                </div>
-                <span class="label">STEER</span>
+        <div class="controller-status-box">
+            <h2>🎮 Physischer Controller</h2>
+            <p id="gamepad-status" class="pulsing">Warte auf Controller-Eingabe...</p>
+            <small>Kopple deinen PS4/Xbox Controller per Bluetooth mit dem Handy und drücke eine Taste.</small>
+            <div class="controller-icon">
+                 <svg width="100" height="60" viewBox="0 0 100 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="10" y="10" width="80" height="40" rx="20" fill="#333"/>
+                    <circle cx="30" cy="30" r="8" fill="#1a1a1d" stroke="#555"/>
+                    <circle cx="70" cy="30" r="8" fill="#1a1a1d" stroke="#555"/>
+                </svg>
             </div>
         </div>
     </div>
@@ -54,18 +48,12 @@
     <div id="layout-wheel" class="control-layout hidden">
         <div class="racing-cockpit">
             <div class="wheel-container">
-                <div id="steering-wheel" class="wheel">
-                    <div class="wheel-mark"></div>
-                </div>
+                <img src="lenkrad.png" id="steering-wheel" class="wheel-img" alt="Lenkrad">
             </div>
             
             <div class="pedals-container">
-                <div class="pedal brake" id="pedal-brake">
-                    <span>BREMSE</span>
-                </div>
-                <div class="pedal gas" id="pedal-gas">
-                    <span>GAS</span>
-                </div>
+                <div class="pedal brake" id="pedal-brake"><span>BREMSE</span></div>
+                <div class="pedal gas" id="pedal-gas"><span>GAS</span></div>
             </div>
         </div>
     </div>
@@ -81,12 +69,11 @@
 
     <div id="settings-modal" class="modal hidden">
         <div class="modal-content">
-            <h3>Einstellungen</h3>
+            <h3>Steuerungs-Modus</h3>
             <div class="setting-row">
-                <label>Steuerungs-Modus:</label>
                 <select id="mode-selector" onchange="changeLayout()">
-                    <option value="ps4">🎮 PS4 Controller</option>
-                    <option value="wheel">🏎️ Lenkrad & Pedale</option>
+                    <option value="ps4">🎮 Echter Controller</option>
+                    <option value="wheel">🏎️ Touch Lenkrad</option>
                     <option value="auto">🤖 Automatik Routen</option>
                 </select>
             </div>
