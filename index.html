@@ -3,17 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RC-Car Ultimate Control</title>
+    <title>RC FPV Command</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+    <div id="video-layer">
+        <img id="camera-stream" src="" alt="NO SIGNAL">
+    </div>
+    <div class="ui-overlay"></div>
+
     <header>
         <div class="top-bar">
-            <div id="connection-status" class="status-indicator">CAR: OFFLINE</div>
+            <div id="connection-status" class="status-indicator">SYSTEM: OFFLINE</div>
             <div class="header-buttons">
-                <button id="btn-connect" onclick="connectBluetooth()">🔗 CAR VERBINDEN</button>
-                <button id="btn-settings" onclick="toggleSettings()">⚙️ MODUS</button>
+                <button id="btn-connect" onclick="connectBluetooth()">🔗 CONNECT BT</button>
+                <button id="btn-settings" onclick="toggleSettings()">⚙️ SETUP</button>
             </div>
         </div>
     </header>
@@ -31,17 +36,10 @@
     </div>
 
     <div id="layout-ps4" class="control-layout">
-        <div class="controller-status-box">
-            <h2>🎮 Physischer Controller</h2>
-            <p id="gamepad-status" class="pulsing">Warte auf Controller-Eingabe...</p>
-            <small>Kopple deinen PS4/Xbox Controller per Bluetooth mit dem Handy und drücke eine Taste.</small>
-            <div class="controller-icon">
-                 <svg width="100" height="60" viewBox="0 0 100 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="10" y="10" width="80" height="40" rx="20" fill="#333"/>
-                    <circle cx="30" cy="30" r="8" fill="#1a1a1d" stroke="#555"/>
-                    <circle cx="70" cy="30" r="8" fill="#1a1a1d" stroke="#555"/>
-                </svg>
-            </div>
+        <div class="controller-status-box transparent-box">
+            <h2>🎮 Gamepad Modus</h2>
+            <p id="gamepad-status" class="pulsing">Warte auf Controller...</p>
+            <div class="info-text">Verbinde deinen PS4/Xbox Controller per Bluetooth mit dem Handy.</div>
         </div>
     </div>
 
@@ -50,7 +48,6 @@
             <div class="wheel-container">
                 <img src="lenkrad.png" id="steering-wheel" class="wheel-img" alt="Lenkrad">
             </div>
-            
             <div class="pedals-container">
                 <div class="pedal brake" id="pedal-brake"><span>BREMSE</span></div>
                 <div class="pedal gas" id="pedal-gas"><span>GAS</span></div>
@@ -60,23 +57,32 @@
 
     <div id="layout-auto" class="control-layout hidden">
         <div class="macro-grid">
-            <h3>Autopilot</h3>
-            <button class="btn-macro" onclick="send('K')">⭕ Kreisfahrt</button>
-            <button class="btn-macro" onclick="send('Q')">⬜ Rechteck</button>
-            <button class="btn-macro stop-macro" onclick="send('S')">STOP</button>
+            <h3>Autopilot Programme</h3>
+            <button class="btn-macro" onclick="send('K')">⭕ Kreisfahrt (Orbit)</button>
+            <button class="btn-macro" onclick="send('Q')">⬜ Rechteck (Patrol)</button>
+            <button class="btn-macro stop-macro" onclick="send('S')">⚠️ NOT-HALT</button>
         </div>
     </div>
 
     <div id="settings-modal" class="modal hidden">
         <div class="modal-content">
-            <h3>Steuerungs-Modus</h3>
-            <div class="setting-row">
+            <h3>System Konfiguration</h3>
+            
+            <div class="setting-block">
+                <label>📡 FPV Kamera IP:</label>
+                <input type="text" id="camera-ip" placeholder="192.168.4.1" value="">
+                <button onclick="startStream()" class="btn-action">Kamera Starten</button>
+            </div>
+
+            <div class="setting-block">
+                <label>🕹️ Steuerungs-Modus:</label>
                 <select id="mode-selector" onchange="changeLayout()">
-                    <option value="ps4">🎮 Echter Controller</option>
-                    <option value="wheel">🏎️ Touch Lenkrad</option>
-                    <option value="auto">🤖 Automatik Routen</option>
+                    <option value="ps4">Playstation/Xbox Controller</option>
+                    <option value="wheel">Touchscreen Lenkrad</option>
+                    <option value="auto">Automatik Routen</option>
                 </select>
             </div>
+            
             <button class="btn-close" onclick="toggleSettings()">Schließen</button>
         </div>
     </div>
