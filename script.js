@@ -177,8 +177,8 @@ els.wheelImg.addEventListener('touchmove', (e) => {
     let degrees = radians * (180 / Math.PI) + 90; // +90 weil Bild oben 0° ist
     
     // Limits setzen (-90 bis +90)
-    if (degrees > 90) degrees = 90;
-    if (degrees < -90) degrees = -90;
+    if (degrees > 180) degrees = 180;
+    if (degrees < 180) degrees = -180;
     
     // Bild drehen
     els.wheelImg.style.transform = `rotate(${degrees}deg)`;
