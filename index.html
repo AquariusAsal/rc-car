@@ -46,7 +46,7 @@
     <div id="layout-wheel" class="control-layout hidden">
         <div class="racing-cockpit">
             <div class="wheel-container">
-                <img src="lenkrad.png" id="steering-wheel" class="wheel-img" alt="Lenkrad">
+                <div id="steering-wheel"></div>
             </div>
             <div class="pedals-container">
                 <div class="pedal brake" id="pedal-brake"><span>BREMSE</span></div>
@@ -58,8 +58,8 @@
     <div id="layout-auto" class="control-layout hidden">
         <div class="macro-grid">
             <h3>Autopilot Programme</h3>
-            <button class="btn-macro" onclick="send('K')">⭕ Kreisfahrt (Orbit)</button>
-            <button class="btn-macro" onclick="send('Q')">⬜ Rechteck (Patrol)</button>
+            <button class="btn-macro" onclick="send('K')">⭕ Kreisfahrt</button>
+            <button class="btn-macro" onclick="send('Q')">⬜ Rechteck</button>
             <button class="btn-macro stop-macro" onclick="send('S')">⚠️ NOT-HALT</button>
         </div>
     </div>
@@ -67,13 +67,11 @@
     <div id="settings-modal" class="modal hidden">
         <div class="modal-content">
             <h3>System Konfiguration</h3>
-            
             <div class="setting-block">
                 <label>📡 FPV Kamera IP:</label>
                 <input type="text" id="camera-ip" placeholder="192.168.4.1" value="">
                 <button onclick="startStream()" class="btn-action">Kamera Starten</button>
             </div>
-
             <div class="setting-block">
                 <label>🕹️ Steuerungs-Modus:</label>
                 <select id="mode-selector" onchange="changeLayout()">
@@ -82,7 +80,6 @@
                     <option value="auto">Automatik Routen</option>
                 </select>
             </div>
-            
             <button class="btn-close" onclick="toggleSettings()">Schließen</button>
         </div>
     </div>
