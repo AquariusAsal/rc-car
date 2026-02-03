@@ -1,8 +1,3 @@
-/* * RC FPV Controller - Differential Drive Edition
- * Logik für Panzersteuerung / Differentialantrieb
- */
-
-// --- GLOBALS ---
 let bluetoothDevice;
 let characteristic;
 const serviceUUID = 0xFFE0;
@@ -13,13 +8,11 @@ let currentMode = 'ps4';
 let wheelActive = false;
 let gamepadIndex = null;
 
-// ZENTRALE STATUSWERTE (-1.0 bis 1.0)
 let inputState = {
-    throttle: 0, // 1 = Vor, -1 = Zurück
-    steering: 0  // -1 = Links, 1 = Rechts
+    throttle: 0,
+    steering: 0
 };
 
-// UI Elemente cachen
 const els = {
     status: document.getElementById('connection-status'),
     speed: document.getElementById('speed-display'),
@@ -37,33 +30,29 @@ const els = {
     camStream: document.getElementById('camera-stream'),
     camIpInput: document.getElementById('camera-ip')
 };
-
-// --- CORE LOGIC: BEFEHLS-BERECHNUNG ---
-// Hier passiert die Magie für das Differential
 function evaluateCommand() {
     const t = inputState.throttle;
     const s = inputState.steering;
     let cmd = 'S';
 
-    // Totzone für kleine Wackler
     const deadzone = 0.15;
 
     if (t > deadzone) { 
         // --- VORWÄRTS FAHREN ---
-        if (s < -deadzone) cmd = 'G';      // Vorwärts-Links (Kurve)
-        else if (s > deadzone) cmd = 'I';  // Vorwärts-Rechts (Kurve)
+        if (s < -deadzone) cmd = 'G';      // Vorwärts-Links
+        else if (s > deadzone) cmd = 'I';  // Vorwärts-Rechts
         else cmd = 'F';                    // Geradeaus
     } 
     else if (t < -deadzone) {
         // --- RÜCKWÄRTS FAHREN ---
-        if (s < -deadzone) cmd = 'H';      // Rückwärts-Links (Kurve)
-        else if (s > deadzone) cmd = 'J';  // Rückwärts-Rechts (Kurve)
+        if (s < -deadzone) cmd = 'H';      // Rückwärts-Links
+        else if (s > deadzone) cmd = 'J';  // Rückwärts-Rechts
         else cmd = 'B';                    // Zurück
     } 
     else {
-        // --- IM STAND DREHEN (Panzer-Modus) ---
-        if (s < -deadzone) cmd = 'L';      // Drehen Links (Hart)
-        else if (s > deadzone) cmd = 'R';  // Drehen Rechts (Hart)
+        // --- IM STAND DREHEN ---
+        if (s < -deadzone) cmd = 'L';      // Drehen Links
+        else if (s > deadzone) cmd = 'R';  // Drehen Rechts
         else cmd = 'S';                    // Stop
     }
 
@@ -71,16 +60,13 @@ function evaluateCommand() {
     updateVisuals(cmd);
 }
 
-// Visuelles Feedback für Lenkrad und Pedale
 function updateVisuals(cmd) {
-    // Pedale leuchten lassen
     if(cmd === 'F' || cmd === 'G' || cmd === 'I') els.pedalGas.classList.add('active');
     else els.pedalGas.classList.remove('active');
 
     if(cmd === 'B' || cmd === 'H' || cmd === 'J') els.pedalBrake.classList.add('active');
     else els.pedalBrake.classList.remove('active');
 
-    // Lenkrad drehen (wenn Tastatur genutzt wird)
     if(!wheelActive) {
         let rot = 0;
         if (inputState.steering < -0.1) rot = -90;
@@ -143,7 +129,7 @@ async function send(cmd) {
     } catch (e) { console.warn(e); }
 }
 
-// --- TASTATUR STEUERUNG (WASD & Pfeile) ---
+// --- TASTATUR STEUERUNG ---
 const keys = { w:0, a:0, s:0, d:0 };
 
 document.addEventListener('keydown', (e) => updateKeys(e.code, 1));
@@ -155,11 +141,9 @@ function updateKeys(code, val) {
     if (code === 'ArrowLeft' || code === 'KeyA') keys.a = val;
     if (code === 'ArrowRight' || code === 'KeyD') keys.d = val;
 
-    // Werte berechnen
-    inputState.throttle = keys.w - keys.s; // 1, 0, oder -1
-    inputState.steering = keys.d - keys.a; // 1, 0, oder -1
+    inputState.throttle = keys.w - keys.s;
+    inputState.steering = keys.d - keys.a;
     
-    // Nur auswerten wenn Lenkrad nicht berührt wird
     if (!wheelActive) evaluateCommand();
 }
 
@@ -185,7 +169,6 @@ document.addEventListener('touchmove', (e) => {
 
     els.wheel.style.transform = `rotate(${degrees}deg)`;
     
-    // Steering Wert setzen (-1 bis 1)
     inputState.steering = degrees / 90;
     evaluateCommand();
 }, {passive:false});
@@ -230,11 +213,9 @@ function gameLoop() {
     if (gamepadIndex !== null && currentMode === 'ps4') {
         const gp = navigator.getGamepads()[gamepadIndex];
         if(gp) {
-            // Analog Sticks lesen
-            inputState.throttle = -gp.axes[1]; // Y-Achse invertiert
+            inputState.throttle = -gp.axes[1]; // Y-Achse
             inputState.steering = gp.axes[2];  // X-Achse
             
-            // Kleine Deadzone filtern
             if(Math.abs(inputState.throttle) < 0.1) inputState.throttle = 0;
             if(Math.abs(inputState.steering) < 0.1) inputState.steering = 0;
             

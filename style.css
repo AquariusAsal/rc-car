@@ -12,7 +12,6 @@ body {
     flex-direction: column;
 }
 
-/* --- FPV VIDEO LAYER --- */
 #video-layer {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -50,7 +49,6 @@ button {
 }
 #btn-connect { background: #007aff; border: none; }
 
-/* --- TACHO --- */
 .dashboard-container { display: flex; justify-content: center; padding: 15px; flex-shrink: 0; }
 .gauge {
     position: relative; width: 120px; height: 120px;
@@ -70,11 +68,9 @@ button {
 #speed-display { font-size: 28px; font-weight: bold; font-family: monospace; color: #fff; }
 .unit { font-size: 12px; color: #aaa; display: block; }
 
-/* --- CONTROLLER BEREICHE --- */
 .control-layout { flex-grow: 1; display: flex; justify-content: center; align-items: center; width: 100%; }
 .hidden { display: none !important; }
 
-/* PS4 Info Box */
 .transparent-box {
     text-align: center;
     background: rgba(0,0,0,0.6);
@@ -87,7 +83,7 @@ button {
 .pulsing { animation: pulse 1.5s infinite; }
 @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-/* --- OPTIMIERTES TOUCH LENKRAD (CSS) --- */
+/* --- OPTIMIERTES TOUCH LENKRAD --- */
 .racing-cockpit {
     display: flex; flex-direction: column; align-items: center;
     width: 100%; gap: 30px;
@@ -96,31 +92,30 @@ button {
     width: 260px; height: 260px;
     display: flex; justify-content: center; align-items: center;
     position: relative;
-    /* Optional: Glow Effekt hinter dem Lenkrad */
+
     filter: drop-shadow(0 0 15px rgba(0,0,0,0.8));
 }
 
 #steering-wheel {
     width: 240px; height: 240px;
     border-radius: 50%;
-    /* Der realistische Look ohne Bild: */
-    border: 15px solid #444; /* Lenkradkranz außen */
+    border: 15px solid #444;
     background: radial-gradient(circle, transparent 40%, rgba(50,50,50,0.9) 41%, #222 100%);
     box-shadow: 
-        inset 0 0 20px #000, /* Schatten innen */
-        0 0 0 2px #222;      /* Feine Außenlinie */
+        inset 0 0 20px #000,
+        0 0 0 2px #222;
     position: relative;
-    transition: transform 0.05s linear; /* Sehr schnelle Reaktion */
+    transition: transform 0.05s linear;
 }
 
-/* Die rote Markierung oben (12 Uhr) */
+/* rote Markierung */
 #steering-wheel::after {
     content: '';
     position: absolute;
     top: -15px; left: 50%;
     transform: translateX(-50%);
     width: 20px; height: 35px;
-    background: #ff3b30; /* Signalrot */
+    background: #ff3b30;
     border-radius: 4px;
     box-shadow: 0 0 10px #ff3b30;
 }
@@ -156,7 +151,6 @@ button {
 .pedal.gas { border-bottom: 5px solid #30d158; }
 .pedal.brake { border-bottom: 5px solid #ff3b30; }
 
-/* Auto Buttons */
 .macro-grid { display: flex; flex-direction: column; gap: 15px; }
 .btn-macro {
     padding: 15px 25px; font-size: 18px;
