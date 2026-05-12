@@ -1,7 +1,7 @@
 let bluetoothDevice;
 let characteristic;
-const serviceUUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
-const charUUID    = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+const serviceUUID = "0000ffe0-0000-1000-8000-00805f9b34fb"; // HM-10 BLE Service
+const charUUID    = "0000ffe1-0000-1000-8000-00805f9b34fb"; // HM-10 BLE Charakteristik
 
 let lastCmd = 'S';
 let currentMode = 'ps4';
@@ -70,9 +70,9 @@ function updateMotorDisplay(cmd) {
     els.barA.style.height = pA + '%';
     els.barB.style.height = pB + '%';
 
-    const fwd = 'var(--orange)';
-    const bwd = 'var(--blue)';
-    const off = '#2a2a2a';
+    const fwd = '#ff9f0a'; // orange (vorwärts)
+    const bwd = '#0a84ff'; // blau  (rückwärts)
+    const off = '#2a2a2a'; // grau  (stop)
     els.barA.style.background = `linear-gradient(to top, ${speedA > 0 ? fwd : speedA < 0 ? bwd : off}, transparent)`;
     els.barB.style.background = `linear-gradient(to top, ${speedB > 0 ? fwd : speedB < 0 ? bwd : off}, transparent)`;
 
@@ -155,7 +155,13 @@ function onDisconnected() {
 async function sendRaw(str) {
     if (!characteristic) return;
     try {
-        await characteristic.writeValue(new TextEncoder().encode(str));
+        const data = new TextEncoder().encode(str);
+        // HM-10 erwartet writeValueWithoutResponse
+        if (characteristic.properties.writeWithoutResponse) {
+            await characteristic.writeValueWithoutResponse(data);
+        } else {
+            await characteristic.writeValue(data);
+        }
     } catch (e) { console.warn(e); }
 }
 
@@ -208,7 +214,7 @@ function adjustTrim(motor, delta) {
 function setSliderFill(id, val, max) {
     const pct = (val / max) * 100;
     document.getElementById(id).style.background =
-        `linear-gradient(to right, var(--orange) ${pct}%, rgba(255,255,255,0.1) ${pct}%)`;
+        `linear-gradient(to right, #ff9f0a ${pct}%, rgba(255,255,255,0.1) ${pct}%)`;
 }
 
 function toggleMotorPanel() {
