@@ -7,10 +7,6 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <div id="video-layer">
-        <img id="camera-stream" src="" alt="NO SIGNAL">
-    </div>
     <div class="ui-overlay"></div>
 
     <header>
@@ -18,20 +14,36 @@
             <div id="connection-status" class="status-indicator">SYSTEM: OFFLINE</div>
             <div class="header-buttons">
                 <button id="btn-connect" onclick="connectBluetooth()">🔗 CONNECT BT</button>
+                <button id="btn-motor" onclick="toggleMotorPanel()">⚡ MOTOR</button>
                 <button id="btn-settings" onclick="toggleSettings()">⚙️ SETUP</button>
             </div>
         </div>
     </header>
 
     <div class="dashboard-container">
+        <div class="motor-ind-wrap">
+            <div class="motor-bar-v-wrap">
+                <div id="bar-a" class="motor-bar-v-fill"></div>
+            </div>
+            <span class="motor-ind-label">A</span>
+            <span id="pct-a" class="motor-ind-pct">0%</span>
+        </div>
+
         <div class="gauge">
             <div class="gauge-body">
-                <div class="gauge-fill"></div>
                 <div class="gauge-cover">
-                    <span id="speed-display">0.0</span>
-                    <span class="unit">m/s</span>
+                    <span id="speed-display">0</span>
+                    <span class="unit">%</span>
                 </div>
             </div>
+        </div>
+
+        <div class="motor-ind-wrap">
+            <div class="motor-bar-v-wrap">
+                <div id="bar-b" class="motor-bar-v-fill"></div>
+            </div>
+            <span class="motor-ind-label">B</span>
+            <span id="pct-b" class="motor-ind-pct">0%</span>
         </div>
     </div>
 
@@ -44,13 +56,18 @@
     </div>
 
     <div id="layout-wheel" class="control-layout hidden">
-        <div class="racing-cockpit">
-            <div class="wheel-container">
-                <div id="steering-wheel"></div>
+        <div class="wheel-fpv-layout">
+            <div class="racing-cockpit">
+                <div class="wheel-container">
+                    <div id="steering-wheel"></div>
+                </div>
+                <div class="pedals-container">
+                    <div class="pedal brake" id="pedal-brake"><span>BREMSE</span></div>
+                    <div class="pedal gas" id="pedal-gas"><span>GAS</span></div>
+                </div>
             </div>
-            <div class="pedals-container">
-                <div class="pedal brake" id="pedal-brake"><span>BREMSE</span></div>
-                <div class="pedal gas" id="pedal-gas"><span>GAS</span></div>
+            <div class="fpv-box">
+                <img id="camera-stream" src="" alt="WARTE AUF VIDEO...">
             </div>
         </div>
     </div>
@@ -64,6 +81,62 @@
         </div>
     </div>
 
+    <!-- Motor Konfiguration Panel (Bottom Sheet) -->
+    <div id="motor-panel" class="motor-panel hidden">
+        <div class="motor-panel-header" onclick="toggleMotorPanel()">
+            <span>⚡ MOTOR KONFIGURATION</span>
+            <span class="panel-close">✕</span>
+        </div>
+        <div class="motor-panel-body">
+
+            <div class="slider-section">
+                <div class="slider-label-row">
+                    <label>🚀 Max. Geschwindigkeit</label>
+                    <span id="speed-pct-label" class="slider-val">78%</span>
+                </div>
+                <input type="range" class="motor-slider" id="slider-speed"
+                       min="0" max="255" value="200" oninput="updateMaxSpeed(this.value)">
+                <div class="slider-ticks">
+                    <span>0</span><span>Langsam</span><span>Mittel</span><span>Schnell</span><span>Max</span>
+                </div>
+            </div>
+
+            <div class="slider-section">
+                <div class="slider-label-row">
+                    <label>↪️ Kurvendifferenzial</label>
+                    <span id="curve-pct-label" class="slider-val">39%</span>
+                </div>
+                <input type="range" class="motor-slider" id="slider-curve"
+                       min="0" max="255" value="100" oninput="updateCurveSpeed(this.value)">
+                <div class="slider-ticks">
+                    <span>Eng</span><span></span><span>Mittel</span><span></span><span>Weit</span>
+                </div>
+            </div>
+
+            <div class="trim-row">
+                <div class="trim-group">
+                    <label>Motor A Trimm</label>
+                    <div class="trim-btns">
+                        <button onclick="adjustTrim('a', -5)">−</button>
+                        <span id="trim-a-val" class="trim-val">0%</span>
+                        <button onclick="adjustTrim('a', 5)">+</button>
+                    </div>
+                </div>
+                <div class="trim-divider"></div>
+                <div class="trim-group">
+                    <label>Motor B Trimm</label>
+                    <div class="trim-btns">
+                        <button onclick="adjustTrim('b', -5)">−</button>
+                        <span id="trim-b-val" class="trim-val">0%</span>
+                        <button onclick="adjustTrim('b', 5)">+</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
     <div id="settings-modal" class="modal hidden">
         <div class="modal-content">
             <h3>System Konfiguration</h3>
